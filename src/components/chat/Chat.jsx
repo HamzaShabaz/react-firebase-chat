@@ -31,7 +31,7 @@ const Chat = () => {
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chat.messages]);
+  }, []);
 
   useEffect(() => {
     const unSub = onSnapshot(doc(db, "chats", chatId), (res) => {
@@ -58,7 +58,10 @@ const Chat = () => {
   };
 
   const handleSend = async () => {
-    if (text === "") return;
+    if (text === "" && !img.file) {
+      console.log("dead")
+      return
+    };
 
     let imgUrl = null;
 
@@ -76,11 +79,16 @@ const Chat = () => {
         }),
       });
 
+      console.log("now")
+
       const userIDs = [currentUser.id, user.id];
 
       userIDs.forEach(async (id) => {
+        console.log("here")
         const userChatsRef = doc(db, "userchats", id);
         const userChatsSnapshot = await getDoc(userChatsRef);
+
+        console.log(userChatsSnapshot)
 
         if (userChatsSnapshot.exists()) {
           const userChatsData = userChatsSnapshot.data();
