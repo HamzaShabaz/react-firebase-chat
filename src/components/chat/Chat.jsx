@@ -13,6 +13,7 @@ import { useChatStore } from "../../lib/chatStore";
 import { useUserStore } from "../../lib/userStore";
 import upload from "../../lib/upload";
 import { format } from "timeago.js";
+import { onValue, ref, serverTimestamp, set } from "firebase/database";
 
 const Chat = () => {
   const [chat, setChat] = useState();
@@ -34,34 +35,48 @@ const Chat = () => {
   }, []);
 
   useEffect(() => {
-    const unSub = onSnapshot(doc(db, "chats", chatId), (res) => {
-      setChat(res.data());
-    });
+    const unSub = () => {
+      onValue(ref(db, `messages/${currentUser.id}/${chatId}`), (snapshot) => {
+        if (snapshot.exists()) {
+          console.log("aaaaaaaaaaaaaaaaaaaaaa", snapshot.val());
+          setChat(Object.values(snapshot.val()));
+        }
+      });
+    };
+
+    unSub()
+
+    // onValue(ref(db, "chats/", chatId), (snapshot) => {
+    //   if (snapshot.exists()) {
+    //     console.log("here from the chat.jsx", snapshot.val());
+    //     setChat(snapshot.val());
+    //   }
+    // });
 
     return () => {
-      unSub();
+      // unSub();
     };
   }, [chatId]);
 
   const handleEmoji = (e) => {
-    setText((prev) => prev + e.emoji);
-    setOpen(false);
+    // setText((prev) => prev + e.emoji);
+    // setOpen(false);
   };
 
   const handleImg = (e) => {
-    if (e.target.files[0]) {
-      setImg({
-        file: e.target.files[0],
-        url: URL.createObjectURL(e.target.files[0]),
-      });
-    }
+    // if (e.target.files[0]) {
+    //   setImg({
+    //     file: e.target.files[0],
+    //     url: URL.createObjectURL(e.target.files[0]),
+    //   });
+    // }
   };
 
   const handleSend = async () => {
     if (text === "" && !img.file) {
-      console.log("dead")
-      return
-    };
+      console.log("dead");
+      return;
+    }
 
     let imgUrl = null;
 
@@ -70,52 +85,64 @@ const Chat = () => {
         imgUrl = await upload(img.file);
       }
 
-      await updateDoc(doc(db, "chats", chatId), {
-        messages: arrayUnion({
-          senderId: currentUser.id,
-          text,
-          createdAt: new Date(),
-          ...(imgUrl && { img: imgUrl }),
-        }),
-      });
+      // await updateDoc(ref(db, "chats/"+ chatId), {
+      //   messages: arrayUnion({
+      //     senderId: currentUser.id,
+      //     text,
+      //     createdAt: new Date(),
+      //     ...(imgUrl && { img: imgUrl }),
+      //   }),
+      // });
 
-      console.log("now")
+      console.log(chat?.length + 1 || 0)
+
+      await set(ref(db, `messages/${currentUser.id}/${chatId}/${chat?.length + 1 || 0}`), {
+        message : text,
+        timestamp : serverTimestamp(),
+        isSent : true
+      })
+
+      await set(ref(db, `messages/${chatId}/${currentUser.id}/${chat?.length + 1 || 0}`), {
+        message: text,
+        createdAt: serverTimestamp(),
+        isSent : false
+      });
 
       const userIDs = [currentUser.id, user.id];
 
       userIDs.forEach(async (id) => {
-        console.log("here")
-        const userChatsRef = doc(db, "userchats", id);
-        const userChatsSnapshot = await getDoc(userChatsRef);
+        console.log("here", userIDs);
+        // const userChatsRef = doc(db, "userchats", id);
+        // const userChatsSnapshot = await getDoc(userChatsRef);
 
-        console.log(userChatsSnapshot)
+        // console.log(userChatsSnapshot);
 
-        if (userChatsSnapshot.exists()) {
-          const userChatsData = userChatsSnapshot.data();
+        // if (userChatsSnapshot.exists()) {
+        //   const userChatsData = userChatsSnapshot.data();
 
-          const chatIndex = userChatsData.chats.findIndex(
-            (c) => c.chatId === chatId
-          );
+        //   const chatIndex = userChatsData.chats.findIndex(
+        //     (c) => c.chatId === chatId
+        //   );
 
-          userChatsData.chats[chatIndex].lastMessage = text;
-          userChatsData.chats[chatIndex].isSeen =
-            id === currentUser.id ? true : false;
-          userChatsData.chats[chatIndex].updatedAt = Date.now();
+        //   userChatsData.chats[chatIndex].lastMessage = text;
+        //   userChatsData.chats[chatIndex].isSeen =
+        //     id === currentUser.id ? true : false;
+        //   userChatsData.chats[chatIndex].updatedAt = Date.now();
 
-          await updateDoc(userChatsRef, {
-            chats: userChatsData.chats,
-          });
-        }
+        //   await updateDoc(userChatsRef, {
+        //     chats: userChatsData.chats,
+        //   });
+        // }
       });
     } catch (err) {
       console.log(err);
-    } finally{
-    setImg({
-      file: null,
-      url: "",
-    });
+    } finally {
+      setImg({
+        file: null,
+        url: "",
+      });
 
-    setText("");
+      setText("");
     }
   };
 
@@ -136,27 +163,27 @@ const Chat = () => {
         </div>
       </div>
       <div className="center">
-        {chat?.messages?.map((message) => (
+        {chat?.map((message) => (
           <div
             className={
-              message.senderId === currentUser?.id ? "message own" : "message"
+              message.isSent ? "message own" : "message"
             }
-            key={message?.createAt}
+            key={message?.timestamp}
           >
             <div className="texts">
               {message.img && <img src={message.img} alt="" />}
-              <p>{message.text}</p>
-              <span>{format(message.createdAt.toDate())}</span>
+              <p>{message.message}</p>
+              <span>{format(message.timestamp)}</span>
             </div>
           </div>
         ))}
-        {img.url && (
+        {/* {img.url && (
           <div className="message own">
             <div className="texts">
               <img src={img.url} alt="" />
             </div>
           </div>
-        )}
+        )} */}
         <div ref={endRef}></div>
       </div>
       <div className="bottom">

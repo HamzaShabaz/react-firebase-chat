@@ -9,6 +9,8 @@ const Detail = () => {
     useChatStore();
   const { currentUser } = useUserStore();
 
+  console.log("here details")
+
   const handleBlock = async () => {
     if (!user) return;
 

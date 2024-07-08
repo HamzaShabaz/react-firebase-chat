@@ -5,6 +5,7 @@ import { useUserStore } from "../../../lib/userStore";
 import { doc, getDoc, onSnapshot, updateDoc } from "firebase/firestore";
 import { db } from "../../../lib/firebase";
 import { useChatStore } from "../../../lib/chatStore";
+import { onValue, ref } from "firebase/database";
 
 const ChatList = () => {
   const [chats, setChats] = useState([]);
@@ -15,25 +16,38 @@ const ChatList = () => {
   const { chatId, changeChat } = useChatStore();
 
   useEffect(() => {
-    const unSub = onSnapshot(
-      doc(db, "userchats", currentUser.id),
-      async (res) => {
-        const items = res.data().chats;
+    // const unSub = onSnapshot(
+    //   doc(db, "userchats", currentUser.id),
+    //   async (res) => {
+    //     const items = res.data().chats;
 
-        const promises = items.map(async (item) => {
-          const userDocRef = doc(db, "users", item.receiverId);
-          const userDocSnap = await getDoc(userDocRef);
+    //     const promises = items.map(async (item) => {
+    //       const userDocRef = doc(db, "users", item.receiverId);
+    //       const userDocSnap = await getDoc(userDocRef);
 
-          const user = userDocSnap.data();
+    //       const user = userDocSnap.data();
 
-          return { ...item, user };
-        });
+    //       return { ...item, user };
+    //     });
 
-        const chatData = await Promise.all(promises);
+    //     const chatData = await Promise.all(promises);
 
-        setChats(chatData.sort((a, b) => b.updatedAt - a.updatedAt));
-      }
-    );
+    //     setChats(chatData.sort((a, b) => b.updatedAt - a.updatedAt));
+    //   }
+    // );
+
+    const unSub = () => {
+      onValue(ref(db, `interactions/${currentUser.id}/`), async (snapshot) => {
+        if (snapshot.exists()) {
+          let interactions = snapshot.val()
+          setChats(Object.values(interactions))
+          // const chatData = await Promise.all(promises);
+
+          // setChats(chatData.sort((a, b) => b.updatedAt - a.updatedAt));
+          // setChats(snapshot.val());
+        }
+      });
+    };
 
     return () => {
       unSub();
@@ -41,31 +55,21 @@ const ChatList = () => {
   }, [currentUser.id]);
 
   const handleSelect = async (chat) => {
-    const userChats = chats.map((item) => {
-      const { user, ...rest } = item;
-      return rest;
-    });
 
-    const chatIndex = userChats.findIndex(
-      (item) => item.chatId === chat.chatId
-    );
+    changeChat(chat.id, chat.username);
 
-    userChats[chatIndex].isSeen = true;
-
-    const userChatsRef = doc(db, "userchats", currentUser.id);
-
-    try {
-      await updateDoc(userChatsRef, {
-        chats: userChats,
-      });
-      changeChat(chat.chatId, chat.user);
-    } catch (err) {
-      console.log(err);
-    }
+    // try {
+    //   await updateDoc(userChatsRef, {
+    //     chats: userChats,
+    //   });
+    //   changeChat(chat.chatId, chat.user);
+    // } catch (err) {
+    //   console.log(err);
+    // }
   };
 
   const filteredChats = chats.filter((c) =>
-    c.user.username.toLowerCase().includes(input.toLowerCase())
+    c.username.toLowerCase().includes(input.toLowerCase())
   );
 
   return (
@@ -89,27 +93,13 @@ const ChatList = () => {
       {filteredChats.map((chat) => (
         <div
           className="item"
-          key={chat.chatId}
+          key={chat.id}
           onClick={() => handleSelect(chat)}
-          style={{
-            backgroundColor: chat?.isSeen ? "transparent" : "#5183fe",
-          }}
         >
-          <img
-            src={
-              chat.user.blocked.includes(currentUser.id)
-                ? "./avatar.png"
-                : chat.user.avatar || "./avatar.png"
-            }
-            alt=""
-          />
           <div className="texts">
             <span>
-              {chat.user.blocked.includes(currentUser.id)
-                ? "User"
-                : chat.user.username}
+              {chat.username}
             </span>
-            <p>{chat.lastMessage}</p>
           </div>
         </div>
       ))}
