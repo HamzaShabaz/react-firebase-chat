@@ -38,6 +38,7 @@ const ChatList = () => {
 
     const unSub = () => {
       onValue(ref(db, `interactions/${currentUser.id}/`), async (snapshot) => {
+        console.log(snapshot)
         if (snapshot.exists()) {
           let interactions = snapshot.val()
           setChats(Object.values(interactions))
@@ -71,6 +72,8 @@ const ChatList = () => {
   const filteredChats = chats.filter((c) =>
     c.username.toLowerCase().includes(input.toLowerCase())
   );
+
+  console.log(filteredChats)
 
   return (
     <div className="chatList">
