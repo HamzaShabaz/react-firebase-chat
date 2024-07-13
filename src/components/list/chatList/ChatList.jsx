@@ -73,7 +73,7 @@ const ChatList = () => {
     c.username.toLowerCase().includes(input.toLowerCase())
   );
 
-  console.log(filteredChats)
+  console.log(filteredChats, "aaaaa")
 
   return (
     <div className="chatList">
