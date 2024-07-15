@@ -16,28 +16,22 @@ const ChatList = () => {
   const { currentUser } = useUserStore();
   const { chatId, changeChat } = useChatStore();
 
-  useEffect(() => {
+    useEffect(() => {
 
     console.log("started effect")
 
     const unSub = () => {
-      try{
-        onValue(ref(db, `interactions/${currentUser.id}/`), async (snapshot) => {
-          console.log(snapshot)
-          if (snapshot.exists()) {
-            let interactions = snapshot.val()
-            setChats(Object.values(interactions))
-            // const chatData = await Promise.all(promises);
-  
-            // setChats(chatData.sort((a, b) => b.updatedAt - a.updatedAt));
-            // setChats(snapshot.val());
-          }
-        });
-      }
-      catch(e) {
-        console.log(e)
-        // toast.error(e)
-      }
+      onValue(ref(db, `interactions/${currentUser.id}/`), async (snapshot) => {
+        console.log(snapshot)
+        if (snapshot.exists()) {
+          let interactions = snapshot.val()
+          setChats(Object.values(interactions))
+          // const chatData = await Promise.all(promises);
+
+          // setChats(chatData.sort((a, b) => b.updatedAt - a.updatedAt));
+          // setChats(snapshot.val());
+        }
+      });
     };
 
     return () => {
