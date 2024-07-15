@@ -16,16 +16,15 @@ const ChatList = () => {
   const { currentUser } = useUserStore();
   const { chatId, changeChat } = useChatStore();
 
-    useEffect(() => {
-
-    console.log("started effect")
+  useEffect(() => {
+    console.log("started effect");
 
     const unSub = () => {
       onValue(ref(db, `interactions/${currentUser.id}/`), async (snapshot) => {
-        console.log(snapshot)
+        console.log(snapshot);
         if (snapshot.exists()) {
-          let interactions = snapshot.val()
-          setChats(Object.values(interactions))
+          let interactions = snapshot.val();
+          setChats(Object.values(interactions));
           // const chatData = await Promise.all(promises);
 
           // setChats(chatData.sort((a, b) => b.updatedAt - a.updatedAt));
@@ -40,7 +39,6 @@ const ChatList = () => {
   }, [currentUser.id]);
 
   const handleSelect = async (chat) => {
-
     changeChat(chat.id, chat.username);
 
     // try {
@@ -57,7 +55,7 @@ const ChatList = () => {
     c.username.toLowerCase().includes(input.toLowerCase())
   );
 
-  console.log(filteredChats, "aaaaa", currentUser)
+  console.log(filteredChats, "aaaaa", currentUser);
 
   return (
     <div className="chatList">
@@ -78,15 +76,9 @@ const ChatList = () => {
         />
       </div>
       {filteredChats.map((chat) => (
-        <div
-          className="item"
-          key={chat.id}
-          onClick={() => handleSelect(chat)}
-        >
+        <div className="item" key={chat.id} onClick={() => handleSelect(chat)}>
           <div className="texts">
-            <span>
-              {chat.username}
-            </span>
+            <span>{chat.username}</span>
           </div>
         </div>
       ))}
