@@ -15,39 +15,29 @@ const ChatList = () => {
   const { currentUser } = useUserStore();
   const { chatId, changeChat } = useChatStore();
 
-  useEffect(() => {
-    // const unSub = onSnapshot(
-    //   doc(db, "userchats", currentUser.id),
-    //   async (res) => {
-    //     const items = res.data().chats;
+    useEffect(() => {
 
-    //     const promises = items.map(async (item) => {
-    //       const userDocRef = doc(db, "users", item.receiverId);
-    //       const userDocSnap = await getDoc(userDocRef);
-
-    //       const user = userDocSnap.data();
-
-    //       return { ...item, user };
-    //     });
-
-    //     const chatData = await Promise.all(promises);
-
-    //     setChats(chatData.sort((a, b) => b.updatedAt - a.updatedAt));
-    //   }
-    // );
+    console.log("started effect")
 
     const unSub = () => {
-      onValue(ref(db, `interactions/${currentUser.id}/`), async (snapshot) => {
-        console.log(snapshot)
-        if (snapshot.exists()) {
-          let interactions = snapshot.val()
-          setChats(Object.values(interactions))
-          // const chatData = await Promise.all(promises);
-
-          // setChats(chatData.sort((a, b) => b.updatedAt - a.updatedAt));
-          // setChats(snapshot.val());
-        }
-      });
+      console.log("started unSub")
+      try{
+        onValue(ref(db, `interactions/${currentUser.id}/`), async (snapshot) => {
+          console.log(snapshot)
+          if (snapshot.exists()) {
+            let interactions = snapshot.val()
+            setChats(Object.values(interactions))
+            // const chatData = await Promise.all(promises);
+  
+            // setChats(chatData.sort((a, b) => b.updatedAt - a.updatedAt));
+            // setChats(snapshot.val());
+          }
+        });
+      }
+      catch(e) {
+        console.log(e)
+        // toast.error(e)
+      }
     };
 
     return () => {
