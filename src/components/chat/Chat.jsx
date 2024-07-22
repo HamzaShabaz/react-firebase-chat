@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import "./chat.css";
 import EmojiPicker from "emoji-picker-react";
-import {
-  arrayUnion,
-  doc,
-  getDoc,
-  onSnapshot,
-  updateDoc,
-} from "firebase/firestore";
+// import {
+//   arrayUnion,
+//   doc,
+//   getDoc,
+//   onSnapshot,
+//   updateDoc,
+// } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 import { useChatStore } from "../../lib/chatStore";
 import { useUserStore } from "../../lib/userStore";
@@ -32,7 +32,7 @@ const Chat = () => {
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, []);
+  }, [chat.length]);
 
   useEffect(() => {
     const unSub = () => {
@@ -64,12 +64,12 @@ const Chat = () => {
   };
 
   const handleImg = (e) => {
-    // if (e.target.files[0]) {
-    //   setImg({
-    //     file: e.target.files[0],
-    //     url: URL.createObjectURL(e.target.files[0]),
-    //   });
-    // }
+    if (e.target.files[0]) {
+      setImg({
+        file: e.target.files[0],
+        url: URL.createObjectURL(e.target.files[0]),
+      });
+    }
   };
 
   const handleSend = async () => {
@@ -99,13 +99,15 @@ const Chat = () => {
       await set(ref(db, `messages/${currentUser.id}/${chatId}/${chat?.length + 1 || 0}`), {
         message : text,
         timestamp : serverTimestamp(),
-        isSent : true
+        isSent : true,
+        image : imgUrl
       })
 
       await set(ref(db, `messages/${chatId}/${currentUser.id}/${chat?.length + 1 || 0}`), {
         message: text,
-        createdAt: serverTimestamp(),
-        isSent : false
+        timestamp: serverTimestamp(),
+        isSent : false,
+        image : imgUrl
       });
 
       const userIDs = [currentUser.id, user.id];
@@ -146,6 +148,12 @@ const Chat = () => {
     }
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      handleSend();
+    }
+  };
+
   return (
     <div className="chat">
       <div className="top">
@@ -171,8 +179,8 @@ const Chat = () => {
             key={message?.timestamp}
           >
             <div className="texts">
-              {message.img && <img src={message.img} alt="" />}
-              <p>{message.message}</p>
+              {message.image && <img src={message.image} alt="" />}
+              {message.message && <p>{message.message}</p>}
               <span>{format(message.timestamp)}</span>
             </div>
           </div>
@@ -209,6 +217,7 @@ const Chat = () => {
           }
           value={text}
           onChange={(e) => setText(e.target.value)}
+          onKeyDown={handleKeyDown}
           disabled={isCurrentUserBlocked || isReceiverBlocked}
         />
         <div className="emoji">
